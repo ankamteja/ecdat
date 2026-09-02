@@ -1,0 +1,367 @@
+# ECDAT algorithm knowledge base.
+#
+# One row per algorithm. Every row carries the published document it comes from,
+# so every score on the dashboard traces to a standard rather than to a
+# developer's judgement. This file is data, not code: changing a threshold is an
+# edit here and never a redeploy of scanner logic.
+#
+# base_classical   0..10  risk from attacks that work today
+# base_quantum     0..10  risk once a cryptographically relevant quantum computer exists
+# quantum_threat   shor | grover | none
+#   shor    broken outright. These and only these are PQC migration candidates.
+#   grover  security margin halved. Real, but a key size problem, not a
+#           migration problem, so it must not inflate PQC readiness.
+#   none    no meaningful quantum exposure.
+# deprecated_after / disallowed_after  NIST IR 8547 ipd (Nov 2024) transition dates
+#
+# References keyed as:
+#   FIPS197 FIPS180-4 FIPS203 FIPS204 FIPS205 SP800-131A IR8547
+#   RFC5280 RFC7465 RFC8996 WANG2004 SHATTERED2017 SWEET32 SHOR1994 GROVER1996
+#   OWASP-A02
+
+defaults:
+  base_classical: 3.0
+  base_quantum: 0.0
+  cwe: "CWE-327"
+
+algorithms:
+
+  # ---- broken: attacks are practical today ----
+  MD5:
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: hash
+    status: broken
+    cwe: "CWE-327"
+    refs: [WANG2004, "SP800-131A"]
+    note: "Practical collision attack published by Wang et al. in 2004."
+
+  SHA-1:
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: hash
+    status: broken
+    cwe: "CWE-327"
+    refs: [SHATTERED2017, "SP800-131A"]
+    note: "Public collision demonstrated by Google and CWI in 2017."
+
+  DES:
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: block-cipher
+    status: broken
+    cwe: "CWE-327"
+    refs: ["SP800-131A"]
+    note: "56 bit effective key. Brute forceable."
+
+  RC4:
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: stream-cipher
+    status: broken
+    cwe: "CWE-327"
+    refs: [RFC7465]
+    note: "Prohibited in TLS by RFC 7465."
+
+  # ---- deprecated: standards bodies have already moved off these ----
+  3DES:
+    base_classical: 8.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: block-cipher
+    status: deprecated
+    cwe: "CWE-327"
+    refs: [SWEET32, "SP800-131A"]
+    note: "64 bit block. SWEET32, CVE-2016-2183."
+
+  "TLSv1.0":
+    base_classical: 8.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: protocol
+    status: deprecated
+    cwe: "CWE-327"
+    refs: [RFC8996]
+    note: "Formally deprecated by RFC 8996 in 2021."
+
+  "TLSv1.1":
+    base_classical: 8.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: protocol
+    status: deprecated
+    cwe: "CWE-327"
+    refs: [RFC8996]
+
+  "SSLv3":
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: protocol
+    status: broken
+    cwe: "CWE-327"
+    refs: [RFC8996]
+
+  "SSLv2":
+    base_classical: 10.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: protocol
+    status: broken
+    cwe: "CWE-327"
+    refs: [RFC8996]
+
+  # ---- approved but quantum vulnerable: the findings ECDAT exists to surface ----
+  RSA:
+    base_classical: 3.0
+    base_quantum: 9.5
+    quantum_threat: shor
+    primitive: public-key
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    deprecated_after: 2030
+    disallowed_after: 2035
+    note: "Broken by Shor. NIST IR 8547 deprecates 112 bit strength after 2030."
+
+  ECDSA:
+    base_classical: 2.0
+    base_quantum: 9.5
+    quantum_threat: shor
+    primitive: public-key
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    deprecated_after: 2030
+    disallowed_after: 2035
+
+  ECDH:
+    base_classical: 2.0
+    base_quantum: 9.5
+    quantum_threat: shor
+    primitive: key-exchange
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    deprecated_after: 2030
+    disallowed_after: 2035
+
+  DH:
+    base_classical: 3.0
+    base_quantum: 9.5
+    quantum_threat: shor
+    primitive: key-exchange
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    deprecated_after: 2030
+    disallowed_after: 2035
+
+  DSA:
+    base_classical: 3.0
+    base_quantum: 9.5
+    quantum_threat: shor
+    primitive: public-key
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    deprecated_after: 2030
+    disallowed_after: 2035
+
+  Ed25519:
+    base_classical: 1.0
+    base_quantum: 9.0
+    quantum_threat: shor
+    primitive: public-key
+    status: quantum-vulnerable
+    cwe: "CWE-326"
+    refs: [SHOR1994, IR8547]
+    disallowed_after: 2035
+
+  # ---- approved, quantum weakened by Grover ----
+  AES-128:
+    base_classical: 1.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: block-cipher
+    status: approved
+    refs: [FIPS197, GROVER1996]
+    note: "Grover halves the effective security margin."
+
+  SHA-256:
+    base_classical: 1.0
+    base_quantum: 4.0
+    quantum_threat: grover
+    primitive: hash
+    status: approved
+    refs: ["FIPS180-4", GROVER1996]
+
+  # ---- strong ----
+  AES-256:
+    base_classical: 0.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: block-cipher
+    status: approved
+    refs: [FIPS197]
+
+  ChaCha20-Poly1305:
+    base_classical: 0.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: aead
+    status: approved
+
+  SHA-384:
+    base_classical: 0.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: hash
+    status: approved
+    refs: ["FIPS180-4"]
+
+  SHA-512:
+    base_classical: 0.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: hash
+    status: approved
+    refs: ["FIPS180-4"]
+
+  "TLSv1.3":
+    base_classical: 0.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: protocol
+    status: approved
+
+  "TLSv1.2":
+    base_classical: 1.0
+    base_quantum: 1.0
+    quantum_threat: none
+    primitive: protocol
+    status: approved
+
+  # ---- post quantum: the migration targets ----
+  ML-KEM:
+    base_classical: 0.0
+    base_quantum: 0.0
+    quantum_threat: none
+    primitive: kem
+    status: pqc
+    refs: [FIPS203]
+
+  ML-DSA:
+    base_classical: 0.0
+    base_quantum: 0.0
+    quantum_threat: none
+    primitive: signature
+    status: pqc
+    refs: [FIPS204]
+
+  SLH-DSA:
+    base_classical: 0.0
+    base_quantum: 0.0
+    quantum_threat: none
+    primitive: signature
+    status: pqc
+    refs: [FIPS205]
+
+  # ---- non algorithm findings ----
+  HARDCODED-SECRET:
+    base_classical: 9.0
+    base_quantum: 0.0
+    primitive: key-material
+    status: misuse
+    cwe: "CWE-798"
+    refs: ["OWASP-A02"]
+
+  INSECURE-RANDOM:
+    base_classical: 7.5
+    base_quantum: 0.0
+    primitive: rng
+    status: misuse
+    cwe: "CWE-338"
+
+  ECB:
+    base_classical: 8.0
+    base_quantum: 0.0
+    primitive: cipher-mode
+    status: broken
+    cwe: "CWE-327"
+    note: "Deterministic mode. Leaks plaintext structure."
+
+  STATIC-IV:
+    base_classical: 7.0
+    base_quantum: 0.0
+    primitive: cipher-mode
+    status: misuse
+    cwe: "CWE-329"
+
+  PKCS1v15:
+    base_classical: 6.0
+    base_quantum: 0.0
+    primitive: padding
+    status: deprecated
+    cwe: "CWE-327"
+
+  WEAK-KDF:
+    base_classical: 6.5
+    base_quantum: 0.0
+    primitive: kdf
+    status: misuse
+    cwe: "CWE-916"
+
+  CERT-VERIFY-DISABLED:
+    base_classical: 9.5
+    base_quantum: 0.0
+    primitive: validation
+    status: misuse
+    cwe: "CWE-295"
+
+  # Not a weakness. Records that a check could not be performed, so that a
+  # gap in coverage is visible in the inventory instead of looking like a
+  # clean result.
+  REQUIRES-MANUAL-REVIEW:
+    base_classical: 2.0
+    base_quantum: 0.0
+    quantum_threat: none
+    primitive: unknown
+    status: untested
+    note: "Coverage gap. Absence of a finding is not evidence of absence."
+
+  DEPRECATED-CRYPTO-LIB:
+    base_classical: 5.0
+    base_quantum: 0.0
+    primitive: library
+    status: deprecated
+    cwe: "CWE-1104"
+
+# Weighting, from the CWSS environmental and attack surface groups.
+weights:
+  context:
+    security: 1.0
+    non_security: 0.4
+    test: 0.3
+  exposure:
+    internet: 1.15
+    internal: 1.0
+    sample: 0.5
+
+# Severity bands. Numeric score maps to a label, SSL Labs style.
+bands:
+  CRITICAL: 9.0
+  HIGH: 7.0
+  MEDIUM: 4.0
+  LOW: 0.0
+
+# Cap rules override the arithmetic. Adapted from the SSL Labs pattern where a
+# single disqualifying defect caps the grade regardless of everything else.
+caps:
+  critical_algorithms: [MD5, SHA-1, DES, RC4, ECB, "SSLv2", "SSLv3"]
+  critical_rules: [ECDAT-017, ECDAT-014]
+  min_confidence_for_critical: 0.70
