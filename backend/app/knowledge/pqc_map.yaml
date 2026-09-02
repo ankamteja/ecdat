@@ -1,0 +1,44 @@
+# Migration targets from NIST FIPS 203, 204 and 205, finalised August 2024.
+# Drives the PQC readiness page and the migration table in reports.
+
+migrations:
+  - from: RSA
+    usage: key-establishment
+    to: ML-KEM-768
+    standard: FIPS 203
+  - from: ECDH
+    usage: key-establishment
+    to: ML-KEM-768
+    standard: FIPS 203
+  - from: DH
+    usage: key-establishment
+    to: ML-KEM-768
+    standard: FIPS 203
+  - from: RSA
+    usage: signature
+    to: ML-DSA-65
+    standard: FIPS 204
+  - from: ECDSA
+    usage: signature
+    to: ML-DSA-65
+    standard: FIPS 204
+  - from: Ed25519
+    usage: signature
+    to: ML-DSA-65
+    standard: FIPS 204
+  - from: DSA
+    usage: signature
+    to: ML-DSA-65
+    standard: FIPS 204
+  - from: RSA
+    usage: firmware-signing
+    to: SLH-DSA
+    standard: FIPS 205
+  - from: AES-128
+    usage: symmetric
+    to: AES-256
+    standard: "FIPS 197, Grover margin"
+  - from: SHA-256
+    usage: hash
+    to: SHA-384
+    standard: "FIPS 180-4, Grover margin"

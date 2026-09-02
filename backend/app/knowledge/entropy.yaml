@@ -1,0 +1,24 @@
+# Shannon entropy pass configuration for the hardcoded secret detector.
+entropy:
+  min_length: 20
+  min_entropy: 4.5
+  confidence: 0.70
+  # Literals matching these are structural, not secrets.
+  allowlist_patterns:
+    - '^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2})+$'   # MAC and fingerprint style
+    - '^https?://'
+    - '^[a-z_]+(\.[a-z_]+)+$'                # dotted module paths
+    - '^\s*$'
+  skip_dirs:
+    - node_modules
+    - .git
+    - venv
+    - .venv
+    - __pycache__
+    - dist
+    - build
+    - vendor
+    - site-packages
+  scan_extensions: [py, java, js, ts, jsx, tsx, go, c, h, rb, php, yaml, yml, json, env, properties, xml, sh]
+  # Directory name fragments that mark a finding as test context.
+  test_dir_markers: [test, tests, spec, fixture, fixtures, sample, samples, mock, mocks, example, examples]
