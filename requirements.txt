@@ -1,0 +1,20 @@
+# Pinned runtime dependencies.
+#
+# Exact versions, not ranges: a scanning tool that silently changes behaviour
+# on a routine `pip install` upgrade is a worse failure mode than a stale pin.
+# Bump deliberately, and re-run the test suite when you do.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.1
+python-multipart==0.0.20
+cryptography==44.0.0
+PyYAML==6.0.2
+jsonschema==4.23.0
+Jinja2==3.1.5
+weasyprint==63.1
+httpx==0.28.1
+pytest==8.3.4
