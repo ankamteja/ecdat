@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>ECDAT Report</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm;
+    @bottom-left { content: "ECDAT cryptographic inventory"; font-family: monospace;
+      font-size: 7pt; color: #7a8399; letter-spacing: .12em; }
+    @bottom-right { content: counter(page) " / " counter(pages);
+      font-family: monospace; font-size: 7pt; color: #7a8399; } }
+  * { box-sizing: border-box }
+  body { font-family: "Helvetica Neue", Arial, sans-serif; color: #2d3142;
+         font-size: 9.5pt; line-height: 1.5; margin: 0 }
+  h1 { font-size: 22pt; margin: 0 0 1mm; font-weight: 600; letter-spacing: -.01em }
+  h2 { font-size: 12pt; margin: 8mm 0 2mm; font-weight: 600;
+       border-bottom: 1px solid #bfc0c0; padding-bottom: 1.5mm; page-break-after: avoid }
+  .sub { color: #4f5d75; margin: 0 0 6mm; font-size: 10pt }
+  .headline { border-left: 3px solid #eb6c36; background: rgba(235,108,54,.07);
+              padding: 4mm 5mm; margin: 4mm 0 6mm; font-size: 11pt; font-weight: 600 }
+  .grid { display: flex; gap: 4mm; margin: 4mm 0 }
+  .stat { flex: 1; border: 1px solid #bfc0c0; border-radius: 3px; padding: 3mm }
+  .stat .n { font-size: 17pt; font-weight: 600; display: block; line-height: 1.1 }
+  .stat .l { font-size: 6.8pt; text-transform: uppercase; letter-spacing: .13em; color: #7a8399 }
+  .crit .n { color: #eb6c36 }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8pt }
+  thead { display: table-header-group }
+  tr { page-break-inside: avoid }
+  th { text-align: left; padding: 1.8mm 2mm; border-bottom: 1px solid #bfc0c0;
+       font-size: 6.6pt; text-transform: uppercase; letter-spacing: .12em; color: #4f5d75 }
+  td { padding: 1.6mm 2mm; border-bottom: 1px solid rgba(45,49,66,.1); vertical-align: top }
+  code { font-family: monospace; font-size: 7.6pt }
+  .sev { font-family: monospace; font-size: 6.8pt; font-weight: 600; letter-spacing: .06em }
+  .CRITICAL { color: #eb6c36 } .HIGH { color: #b8541f }
+  .MEDIUM { color: #4f5d75 } .LOW { color: #7a8399 }
+  .note { font-size: 8pt; color: #4f5d75; margin: 3mm 0 }
+  .foot { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #bfc0c0;
+          font-size: 7.5pt; color: #7a8399 }
+</style></head><body>
+
+<h1>Cryptographic inventory</h1>
+<p class="sub">{{ scan.kind }} scan of <code>{{ scan.target }}</code>, {{ generated_at[:19] }}</p>
+
+<div class="headline">{{ pqc.headline }}</div>
+
+<div class="grid">
+  <div class="stat crit"><span class="n">{{ summary.by_severity.get('CRITICAL', 0) }}</span><span class="l">Critical</span></div>
+  <div class="stat"><span class="n">{{ summary.by_severity.get('HIGH', 0) }}</span><span class="l">High</span></div>
+  <div class="stat"><span class="n">{{ summary.total_findings }}</span><span class="l">Findings</span></div>
+  <div class="stat"><span class="n">{{ summary.assets }}</span><span class="l">Assets</span></div>
+  <div class="stat"><span class="n">{{ pqc.readiness_percent }}%</span><span class="l">PQC ready</span></div>
+</div>
+
+{% if pqc.migrations %}
+<h2>Post-quantum migration</h2>
+<p class="note">Transition dates are from NIST IR 8547 ipd. Quantum vulnerable algorithms
+at 112 bits of security strength are deprecated after 2030 and disallowed after 2035.</p>
+<table>
+  <thead><tr><th>Algorithm</th><th>Assets</th><th>Migrate to</th><th>Standard</th><th>Disallowed</th><th>Years left</th></tr></thead>
+  <tbody>
+  {% for m in pqc.migrations %}
+    <tr><td><code>{{ m.algorithm }}</code></td><td>{{ m.assets }}</td><td><code>{{ m.target }}</code></td>
+        <td>{{ m.standard }}</td><td>{{ m.disallowed_after }}</td><td><strong>{{ m.years_remaining }}</strong></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if correlations %}
+<h2>Cross source correlations</h2>
+<p class="note">Relationships between assets discovered by different scanners. No single
+purpose tool can produce these, because none of them see more than one source.</p>
+<table>
+  <thead><tr><th>Asset</th><th>Related asset</th><th>Relation</th></tr></thead>
+  <tbody>
+  {% for c in correlations %}
+    <tr><td><code>{{ c.a }}</code></td><td><code>{{ c.b }}</code></td><td>{{ c.relation }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Findings</h2>
+<table>
+  <thead><tr><th>Sev</th><th>Algorithm</th><th>Location</th><th>Class</th><th>Quant</th><th>Conf</th><th>Reference</th></tr></thead>
+  <tbody>
+  {% for f in findings %}
+    <tr>
+      <td class="sev {{ f.severity }}">{{ f.severity }}</td>
+      <td><code>{{ f.algorithm }}</code></td>
+      <td><code>{{ f.file_path or f.locator }}{% if f.line_no %}:{{ f.line_no }}{% endif %}</code></td>
+      <td>{{ "%.1f"|format(f.classical_score) }}</td>
+      <td>{{ "%.1f"|format(f.quantum_score) }}</td>
+      <td>{{ "%.2f"|format(f.confidence) }}</td>
+      <td>{{ f.standard_refs or f.cwe or "" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<p class="foot">Generated by ECDAT {{ tool.version }}. Scores are computed on two independent
+axes and never averaged. Structure follows MITRE CWSS, cap rules follow the Qualys SSL Labs
+rating method, quantum transition dates follow NIST IR 8547. Detected key material is never
+stored or reported in full.</p>
+</body></html>
