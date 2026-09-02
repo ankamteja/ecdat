@@ -1,0 +1,211 @@
+# ECDAT detection rules.
+#
+# Eighteen rules against a claim of fifteen or more. Each rule carries the
+# standard it comes from, so GET /api/v1/rules is a live, verifiable version of
+# the reference list in the presentation.
+#
+# match.patterns are regular expressions applied to a source line.
+# match.langs limits a rule to certain file extensions.
+# confidence follows the CWSS base finding group: a precise API match scores
+# higher than a loose textual one. Anything below 0.70 is reported as
+# "requires manual review" and can never reach CRITICAL.
+
+rules:
+  - id: ECDAT-001
+    name: MD5 usage
+    algorithm: MD5
+    group: weak-primitive
+    confidence: 0.95
+    langs: [py, java, js, ts, go, c]
+    patterns:
+      - '(?i)\bmd5\s*\('
+      - '(?i)hashlib\.md5'
+      - '(?i)MessageDigest\.getInstance\(\s*"MD5"'
+      - '(?i)createHash\(\s*[''"]md5[''"]'
+
+  - id: ECDAT-002
+    name: SHA-1 usage
+    algorithm: SHA-1
+    group: weak-primitive
+    confidence: 0.95
+    langs: [py, java, js, ts, go, c]
+    patterns:
+      - '(?i)hashlib\.sha1'
+      - '(?i)MessageDigest\.getInstance\(\s*"SHA-?1"'
+      - '(?i)createHash\(\s*[''"]sha1[''"]'
+      - '(?i)\bsha1\s*\('
+
+  - id: ECDAT-003
+    name: DES or Triple DES cipher
+    algorithm: DES
+    group: weak-primitive
+    confidence: 0.95
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)\bDES\.new\b'
+      - '(?i)Cipher\.getInstance\(\s*"DES'
+      - '(?i)\bDESede\b'
+      - '(?i)\bTripleDES\b'
+
+  - id: ECDAT-004
+    name: RC4 cipher
+    algorithm: RC4
+    group: weak-primitive
+    confidence: 0.95
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)\bARC4\b'
+      - '(?i)\bRC4\b'
+
+  - id: ECDAT-005
+    name: ECB block cipher mode
+    algorithm: ECB
+    group: weak-primitive
+    confidence: 0.95
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)MODE_ECB'
+      - '(?i)/ECB/'
+      - '(?i)["'']aes-\d+-ecb["'']'
+
+  - id: ECDAT-006
+    name: RSA key smaller than 2048 bits
+    algorithm: RSA
+    group: weak-parameter
+    confidence: 0.95
+    key_size_from_match: true
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)key_size\s*=\s*(512|768|1024|1536)\b'
+      - '(?i)generate_private_key\([^)]*?(512|768|1024|1536)\b'
+      - '(?i)initialize\(\s*(512|768|1024|1536)\s*\)'
+      - '(?i)modulusLength:\s*(512|768|1024|1536)\b'
+
+  - id: ECDAT-007
+    name: Elliptic curve below 224 bits
+    algorithm: ECDSA
+    group: weak-parameter
+    confidence: 0.90
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)SECP(160|192)R1'
+      - '(?i)["'']prime192v1["'']'
+      - '(?i)\bsecp192k1\b'
+
+  - id: ECDAT-008
+    name: PKCS1 v1.5 padding
+    algorithm: PKCS1v15
+    group: weak-parameter
+    confidence: 0.90
+    langs: [py, java, js, ts]
+    patterns:
+      - '(?i)PKCS1v15'
+      - '(?i)RSA/ECB/PKCS1Padding'
+
+  - id: ECDAT-009
+    name: Static or hardcoded initialisation vector
+    algorithm: STATIC-IV
+    group: weak-parameter
+    confidence: 0.85
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)\biv\s*=\s*b?["''][A-Za-z0-9+/=]{8,}["'']'
+      - '(?i)IvParameterSpec\(\s*"'
+
+  - id: ECDAT-010
+    name: Weak key derivation
+    algorithm: WEAK-KDF
+    group: weak-parameter
+    confidence: 0.85
+    langs: [py, java, js, ts]
+    patterns:
+      - '(?i)pbkdf2[_a-z]*\([^)]*?,\s*(\d{1,4})\s*\)'
+      - '(?i)iterations\s*=\s*(\d{1,4})\b'
+
+  - id: ECDAT-011
+    name: Insecure random used for key material
+    algorithm: INSECURE-RANDOM
+    group: misuse
+    confidence: 0.80
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)random\.(random|randint|choice)\([^)]*\).{0,40}(key|token|secret|nonce|salt)'
+      - '(?i)(key|token|secret|nonce|salt).{0,40}random\.(random|randint|choice)\('
+      - '(?i)Math\.random\(\).{0,40}(key|token|secret)'
+      - '(?i)new\s+java\.util\.Random\('
+
+  - id: ECDAT-012
+    name: Weak hash inside HMAC
+    algorithm: MD5
+    group: misuse
+    confidence: 0.95
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)hmac[^\n]{0,40}(md5|sha1)'
+      - '(?i)Hmac(MD5|SHA1)'
+
+  - id: ECDAT-013
+    name: TLS pinned to a deprecated version
+    algorithm: "TLSv1.0"
+    group: misuse
+    confidence: 0.90
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)PROTOCOL_TLSv1(\b|_1)'
+      - '(?i)["'']TLSv1(\.1)?["'']'
+      - '(?i)SSLv23_METHOD'
+
+  - id: ECDAT-014
+    name: Certificate verification disabled
+    algorithm: CERT-VERIFY-DISABLED
+    group: misuse
+    confidence: 0.95
+    langs: [py, java, js, ts, go]
+    patterns:
+      - '(?i)verify\s*=\s*False'
+      - '(?i)InsecureSkipVerify\s*:\s*true'
+      - '(?i)rejectUnauthorized\s*:\s*false'
+      - '(?i)CERT_NONE'
+
+  - id: ECDAT-015
+    name: SSLv2 or SSLv3 usage
+    algorithm: "SSLv3"
+    group: misuse
+    confidence: 0.95
+    langs: [py, java, js, ts, go, c]
+    patterns:
+      - '(?i)PROTOCOL_SSLv[23]'
+      - '(?i)SSLv[23]_method'
+
+  - id: ECDAT-016
+    name: Deprecated cryptography library
+    algorithm: DEPRECATED-CRYPTO-LIB
+    group: misuse
+    confidence: 0.90
+    langs: [py, js, ts]
+    patterns:
+      - '(?i)^\s*(import|from)\s+Crypto\b'
+      - '(?i)require\(\s*["'']crypto-js["'']'
+
+  - id: ECDAT-017
+    name: Hardcoded key or password literal
+    algorithm: HARDCODED-SECRET
+    group: secret
+    confidence: 0.90
+    langs: [py, java, js, ts, go, c, yaml, json, env]
+    patterns:
+      - '(?i)(secret|password|passwd|api_?key|private_?key|token)\s*[:=]\s*["''][^"'']{8,}["'']'
+      - '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+
+  - id: ECDAT-018
+    name: High entropy string literal
+    algorithm: HARDCODED-SECRET
+    group: secret
+    confidence: 0.70
+    entropy_rule: true
+    langs: [py, java, js, ts, go, c, yaml, json, env]
+    note: >
+      Handled by the Shannon entropy pass rather than a pattern. A literal of
+      at least 20 characters with entropy at or above 4.5 is reported as
+      possible key material at the minimum confidence, which means it can never
+      reach CRITICAL on its own.
