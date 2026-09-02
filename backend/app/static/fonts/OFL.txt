@@ -1,0 +1,9 @@
+Public Sans is licensed under the SIL Open Font License, Version 1.1.
+Space Mono is licensed under the SIL Open Font License, Version 1.1.
+Full license text: https://openfontlicense.org
+
+Files self-hosted here (see ../style.css for @font-face declarations) so the
+dashboard makes no outbound network request to render its own text, which
+matches the offline-capable, data-sovereign operation the project claims
+elsewhere. Fetched once from Google Fonts' static file host at build time,
+not loaded from it at runtime.
