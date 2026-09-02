@@ -1,0 +1,51 @@
+# ECDAT: one command to a running tool.
+#
+#   docker compose up --build
+#
+# Then open http://localhost:8000 and log in with admin / ecdat-demo.
+#
+# Two services. The scanner, and a deliberately weak TLS endpoint for it to
+# scan. Shipping the demo target inside the stack means the network scan can be
+# demonstrated with no internet connection and without pointing a scanner at
+# anything that does not belong to this project.
+
+services:
+  ecdat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ecdat:local
+    container_name: ecdat
+    ports:
+      - "8000:8000"
+    environment:
+      # Override before any real deployment. The application logs a warning
+      # while this is still the default.
+      ECDAT_JWT_SECRET: "change-me-in-production"
+      ECDAT_SEED_ADMIN_USER: "admin"
+      ECDAT_SEED_ADMIN_PASSWORD: "ecdat-demo"
+    volumes:
+      # Findings and reports survive a restart. Nothing else is writable.
+      - ecdat-data:/app/data
+      - ecdat-reports:/app/reports_out
+    depends_on:
+      - weak-tls
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  weak-tls:
+    build:
+      context: ./demo-targets/weak-tls
+    image: ecdat-weak-tls:local
+    container_name: ecdat-weak-tls
+    # Deliberately not published to the host. The target is reachable from the
+    # scanner container as weak-tls:8443 and from nowhere else, so an
+    # intentionally vulnerable endpoint cannot be left listening by accident.
+    expose:
+      - "8443"
+    restart: unless-stopped
+
+volumes:
+  ecdat-data:
+  ecdat-reports:
